@@ -1,0 +1,7 @@
+---
+channel: stable
+addons:
+  study:
+    repository: yambal/hass/study
+    target: stady
+    image: yambal/hass/study
