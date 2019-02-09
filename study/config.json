@@ -1,9 +1,9 @@
 {
   "name": "Study",
   "version": "1.7.0",
-  "slug": "example",
+  "slug": "study",
   "description": "Example add-on by Community Hass.io Add-ons",
-  "url": "https://github.com/hassio-addons/addon-example",
+  "url": "https://github.com/yambal/hass/tree/master/study",
   "startup": "application",
   "arch": [
     "aarch64",
