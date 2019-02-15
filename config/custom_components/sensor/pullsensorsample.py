@@ -1,24 +1,25 @@
 """
+定期的に非同期でデータをPULLするセンサー
+参照
 https://github.com/home-assistant/home-assistant/blob/master/homeassistant/components/sensor/yr.py
 """
 
-import random
 import asyncio
-import logging
 import voluptuous as vol
-
-import homeassistant.helpers.config_validation as cv
+import homeassistant.helpers.config_validation as confValue
 from homeassistant.components.sensor import PLATFORM_SCHEMA
 from homeassistant.const import (
-    CONF_LATITUDE, CONF_LONGITUDE, CONF_ELEVATION, CONF_MONITORED_CONDITIONS, ATTR_ATTRIBUTION, CONF_NAME
+    CONF_LATITUDE, CONF_LONGITUDE, CONF_MONITORED_CONDITIONS, ATTR_ATTRIBUTION, CONF_NAME
 )
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.event import (async_track_utc_time_change, async_call_later)
 
+import random
+
+# ------------------------------------------------------------------------------
+# 設定
 DEFAULT_NAME = 'Sensor Base'
 CONF_ATTRIBUTION = "開発ツール > Status などに表示される帰属"
-
-# _LOGGER = logging.getLogger(DEFAULT_NAME)
 
 # データ取得間隔（秒）
 FETCH_INTERVAL = 60;
@@ -33,18 +34,24 @@ SENSOR_TYPES = {
 # スキーマ設定
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Optional(CONF_MONITORED_CONDITIONS, default=['a']):
-        vol.All(cv.ensure_list, vol.Length(min=1), [vol.In(SENSOR_TYPES)]),
+        vol.All(confValue.ensure_list, vol.Length(min=1), [vol.In(SENSOR_TYPES)]),
+    vol.Optional(CONF_LATITUDE): confValue.latitude,
+    vol.Optional(CONF_LONGITUDE): confValue.longitude,
+    vol.Optional(CONF_NAME, default=DEFAULT_NAME): confValue.string,
 })
 
 # ------------------------------------------------------------------------------
 # エンティティ定義
 async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
+    latitude = config.get(CONF_LATITUDE, hass.config.latitude)
+    longitude = config.get(CONF_LONGITUDE, hass.config.longitude)
+    name = config.get(CONF_NAME)
 
     # [monitored_conditions](正規化済み)のリスト毎にセンサーを生成
-    # エンティティリスト dev に詰める
+    # エンティティリスト entities に詰める
     entities = []
     for sensor_type in config[CONF_MONITORED_CONDITIONS]:
-        entities.append(mySensorEntities(DEFAULT_NAME, sensor_type))
+        entities.append(mySensorEntities(name, sensor_type))
 
     # 非同期エンティティリストとして登録
     async_add_entities(entities)
@@ -63,6 +70,7 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
 
 # ------------------------------------------------------------------------------
 # エンティティ定義
+# ほぼ定型？
 class mySensorEntities(Entity):
     def __init__(self, name, sensor_type):
       self.client_name = name
@@ -73,29 +81,24 @@ class mySensorEntities(Entity):
 
     @property
     def name(self):
-        """Return the name of the sensor."""
         return '{} {}'.format(self.client_name, self._name)
 
     @property
     def state(self):
-        """Return the state of the device."""
         return self._state
 
     @property
     def should_poll(self):
-        """No polling needed."""
         return False
 
     @property
     def device_state_attributes(self):
-        """Return the state attributes."""
         return {
             ATTR_ATTRIBUTION: CONF_ATTRIBUTION,
         }
 
     @property
     def unit_of_measurement(self):
-        """Return the unit of measurement of this entity, if any."""
         return self._unit_of_measurement
 
 # ------------------------------------------------------------------------------
