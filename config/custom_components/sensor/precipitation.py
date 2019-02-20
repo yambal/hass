@@ -1,5 +1,5 @@
 """
-Yahoo 気象情報APIセンサー
+Hass.io Yahoo 気象情報APIセンサー
 https://developer.yahoo.co.jp/webapi/map/openlocalplatform/v1/weather.html
 """
 
