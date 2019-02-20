@@ -1,5 +1,5 @@
 """
-Hass.Yahoo 気象情報APIセンサー
+Hass.io Yahoo 気象情報APIセンサー
 https://github.com/yambal/hass/blob/master/config/custom_components/sensor/Precipitation.md
 
 API
