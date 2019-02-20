@@ -1,5 +1,8 @@
 """
-Hass.io Yahoo 気象情報APIセンサー
+Hass.Yahoo 気象情報APIセンサー
+https://github.com/yambal/hass/blob/master/config/custom_components/sensor/Precipitation.md
+
+API
 https://developer.yahoo.co.jp/webapi/map/openlocalplatform/v1/weather.html
 """
 
@@ -41,8 +44,7 @@ SENSOR_TYPES = {
     'forecast60': ['Forecast after 1 houre', 'mm'],
     'msg': ['Message', None],
     'digest': ['Digest', None],
-    'update': ['Update', None],
-    'rainy': ['Rainy', None],
+    'update': ['Update', None]
 }
 
 # スキーマ設定
@@ -218,7 +220,6 @@ class myDataFetcher:
             'msg': [str(self.data['Feature'][0]['Name'])],
             'update': ['{}年{}月{}日{}時{}分'.format(dateString[0:4], dateString[4:6], dateString[6:8], dateString[8:10], dateString[10:12])],
             'symbol': ['https://image-charts.com/chart?chs=100x100&cht=bvg&chd=t:{}|{}|{}|{}|{}|{}|{}'.format(r[0],r[1],r[2],r[3],r[4],r[5],r[6])],
-            'rainy': r[0] > 0,
         }
 
         # センサーごとに更新データをupdateStateTasksに詰める
