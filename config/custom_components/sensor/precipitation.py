@@ -44,6 +44,8 @@ SENSOR_TYPES = {
     'forecast60': ['Forecast after 1 houre', 'mm'],
     'msg': ['Message', None],
     'digest': ['Digest', None],
+    'update': ['Update', None],
+    'rainy': ['Rainy', None],
 }
 
 # スキーマ設定
@@ -197,76 +199,54 @@ class myDataFetcher:
         if not self.data:
             return
 
+        r = [
+            float(self.data['Feature'][0]['Property']['WeatherList']['Weather'][0]['Rainfall']),
+            float(self.data['Feature'][0]['Property']['WeatherList']['Weather'][1]['Rainfall']),
+            float(self.data['Feature'][0]['Property']['WeatherList']['Weather'][2]['Rainfall']),
+            float(self.data['Feature'][0]['Property']['WeatherList']['Weather'][3]['Rainfall']),
+            float(self.data['Feature'][0]['Property']['WeatherList']['Weather'][4]['Rainfall']),
+            float(self.data['Feature'][0]['Property']['WeatherList']['Weather'][5]['Rainfall']),
+            float(self.data['Feature'][0]['Property']['WeatherList']['Weather'][6]['Rainfall']),
+        ]
+
+        dateString = str(self.data['Feature'][0]['Property']['WeatherList']['Weather'][0]['Date']).strip()
+        rainfallDict = {
+            'rainfall': [r[0],'0分'],
+            'forecast10': [r[1],'10分'],
+            'forecast20': [r[2],'20分'],
+            'forecast30': [r[3],'30分'],
+            'forecast40': [r[4],'40分'],
+            'forecast50': [r[5],'50分'],
+            'forecast60': [r[6],'1時間'],
+            'msg': [str(self.data['Feature'][0]['Name'])],
+            'update': ['{}年{}月{}日{}時{}分'.format(dateString[0:4], dateString[4:6], dateString[6:8], dateString[8:10], dateString[10:12])],
+            'symbol': ['https://image-charts.com/chart?chs=100x100&cht=bvg&chd=t:{}|{}|{}|{}|{}|{}|{}'.format(r[0],r[1],r[2],r[3],r[4],r[5],r[6])],
+            'rainy': r[0] > 0,
+        }
+
         # センサーごとに更新データをupdateStateTasksに詰める
         updateStateTasks = []
         for checkEntity in self.entities:
             newState = None
 
-            rainfall = float(self.data['Feature'][0]['Property']['WeatherList']['Weather'][0]['Rainfall'])
-            forecast10 = float(self.data['Feature'][0]['Property']['WeatherList']['Weather'][1]['Rainfall'])
-            forecast20 = float(self.data['Feature'][0]['Property']['WeatherList']['Weather'][2]['Rainfall'])
-            forecast30 = float(self.data['Feature'][0]['Property']['WeatherList']['Weather'][3]['Rainfall'])
-            forecast40 = float(self.data['Feature'][0]['Property']['WeatherList']['Weather'][4]['Rainfall'])
-            forecast50 = float(self.data['Feature'][0]['Property']['WeatherList']['Weather'][5]['Rainfall'])
-            forecast60 = float(self.data['Feature'][0]['Property']['WeatherList']['Weather'][6]['Rainfall'])
+            if checkEntity.type in rainfallDict.keys():
+                newState = rainfallDict[checkEntity.type][0]
 
-            if checkEntity.type == 'rainfall':
-                newState = rainfall
+            else:
+                if checkEntity.type == 'digest':
+                    if rainfallDict['rainfall'][0] == 0:
+                        newState = "一時間以内に雨が降る予報はありません"
+                        for idx in ['forecast60', 'forecast50', 'forecast40', 'forecast30', 'forecast20', 'forecast10']:
+                            val = rainfallDict[idx]
+                            if val[0] != 0:
+                                newState = '{}前後で{}mmの雨が{}可能性があります'.format(val[1], val[0], '降る')
 
-            elif checkEntity.type == 'forecast10':
-                newState = forecast10
-
-            elif checkEntity.type == 'forecast20':
-                newState = forecast20
-
-            elif checkEntity.type == 'forecast30':
-                newState = forecast30
-
-            elif checkEntity.type == 'forecast40':
-                newState = forecast40
-
-            elif checkEntity.type == 'forecast50':
-                newState = forecast50
-
-            elif checkEntity.type == 'forecast60':
-                newState = forecast60
-
-            elif checkEntity.type == 'msg':
-                newState = str(self.data['Feature'][0]['Name'])
-
-            elif checkEntity.type == 'symbol':
-                newState = 'https://image-charts.com/chart?chs=100x100&cht=bvg&chd=t:{}|{}|{}|{}|{}|{}'.format(rainfall, forecast20, forecast30, forecast40, forecast50, forecast60)
-
-            elif checkEntity.type == 'digest':
-                if rainfall == 0:
-                    newState = "一時間以内に雨が降る予報はありません"
-                    if forecast10 != 0:
-                        newState = '{}分後前後で{}mmの雨が{}可能性があります'.format(10, '降る', forecast10)
-                    elif forecast20 != 0:
-                        newState = '{}分後前後で{}mmの雨が{}可能性があります'.format(20, '降る', forecast20)
-                    elif forecast30 != 0:
-                        newState = '{}分後前後で{}mmの雨が{}可能性があります'.format(30, '降る', forecast30)
-                    elif forecast40 != 0:
-                        newState = '{}分後前後で{}mmの雨が{}可能性があります'.format(40, '降る', forecast40)
-                    elif forecast50 != 0:
-                        newState = '{}分後前後で{}mmの雨が{}可能性があります'.format(50, '降る', forecast50)
-                    elif forecast60 != 0:
-                        newState = '1時間前後で{}mmの雨が{}可能性があります'.format('降る', forecast60)
-
-                if rainfall != 0:
-                    newState = "一時間以内に雨が止む予報はありません"
-                    if forecast10 == 0:
-                        newState = '{}分後前後で雨が{}可能性があります'.format(10, '止む')
-                    if forecast20 == 0:
-                        newState = '{}分後前後で雨が{}可能性があります'.format(10, '止む')
-                    if forecast30 == 0:
-                        newState = '{}分後前後で雨が{}可能性があります'.format(10, '止む')
-                    if forecast40 == 0:
-                        newState = '{}分後前後で雨が{}可能性があります'.format(10, '止む')
-                    if forecast50 == 0:
-                        newState = '{}分後前後で雨が{}可能性があります'.format(10, '止む')
-                    if forecast60 == 0:
-                        newState = "一時間前後で雨が止む可能性があります"
+                    elif rainfallDict['rainfall'][0] != 0:
+                        newState = '雨が降っています。一時間以内に止む予報はありません'
+                        for idx in ['forecast60', 'forecast50', 'forecast40', 'forecast30', 'forecast20', 'forecast10']:
+                            val = rainfallDict[idx]
+                            if val[0] == 0:
+                                newState = '{}前後で雨が止む可能性があります'.format(val[1])
 
             # 値に変化があれば更新タスクに追加
             if newState != checkEntity._state:
