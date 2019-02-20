@@ -1,8 +1,5 @@
 """
-定期的に非同期でデータをPULLするセンサー
-参照
-https://github.com/home-assistant/home-assistant/blob/master/homeassistant/components/sensor/yr.py
-
+Yahoo 気象情報APIセンサー
 https://developer.yahoo.co.jp/webapi/map/openlocalplatform/v1/weather.html
 """
 
